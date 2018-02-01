@@ -14,158 +14,149 @@ struct process
 	int burst_time;
 	int waiting_time;
 	int turn_around_time;
+	int remaining_time;
 };
 
 struct process p[N];
-double av_wait = 0.0, av_turn = 0.0;
-int n, time_quantum, burst[N];
+int queue[N];
+int front = 0, rear = 0;
+int n, time_quantum;
 
-int max(int a, int b)
+void push(int pid)
 {
-	if(a>b)
-		return a;
-	return b;
+	queue[rear] = pid;
+	rear = (rear+1)%N;
 }
 
-void swap(int i, int j)
+int pop()
 {
-	struct process temp;
-	temp = p[i];
-	p[i] = p[j];
-	p[j] = temp;
+	if(front == rear)
+		return -1;
 
-	int temp2 = burst[i];
-	burst[i] = burst[j];
-	burst[j] = temp2;
+	int ret = queue[front];
+	front = (front +1)%N;
+	return ret;
 }
 
-void sort()
+void add_processes(int tim)
 {
-	for(int i=0; i<n-1; i++)
-		for(int j=i+1; j<n; j++)
-			if(p[i].arrival_time > p[j].arrival_time)
-				swap(i, j);
+	for(int i=0; i<n; i++)
+		if(p[i].arrival_time == tim)
+			push(i);
 }
 
 void compute()
 {
-	int tim=-1, tot=n, pos=-1, prev=-1, local_tim=-1;
+	int tim=0; //Time
+	int tot=n; //Total number of process yet to finish execution
+	int pos=-1; //Process under execution
+	int local_tim=0; //Time after previous time_quantum
+	
+	add_processes(tim); //Add processes which have arrived at Time = tim
+
+	printf("\n====================================================================================\n");
+	printf("\nOrder of execution\n");
 
 	while(tot)
 	{
-		tim++;
-		local_tim++;
-		pos = -1;
-
-		if(prev!=-1 && burst[prev] && local_tim != time_quantum)
-			pos = prev;
-		else
+		if(local_tim == 0) //New time_quantum
 		{
-			if(local_tim == time_quantum)
-				local_tim = 0;
+			//Put previous process at the end of the queue
+			if(pos != -1)
+				push(pos);
 
-			int flag=1;
-			for(int i=(prev+1)%n; i<n; i++)
-				if(burst[i] && tim>=p[i].arrival_time)
-				{
-					pos = i;
-					flag = 0;
-					break;
-				}
+			//Get next process
+			pos = pop();
+		}
 
-			if(flag)
+		printf("%d ", pos==-1? -1:pos+1);
+
+		//Update info for other processes
+		for(int i=0; i<n; i++)
+		{
+			if(p[i].arrival_time > tim)
+				continue;
+			if(i==pos)
+				continue;
+			if(p[i].remaining_time == 0)
+				continue;
+
+			p[i].waiting_time++;
+			p[i].turn_around_time++;
+		}
+
+		if(pos != -1)
+		{
+			//Update info for current process
+			p[pos].remaining_time--;
+			p[pos].turn_around_time++;
+			//printf("# %d\n", p[pos].remaining_time);
+			if(p[pos].remaining_time == 0)
 			{
-				for(int i=0; i<=prev; i++)
-					if(burst[i] && tim>=p[i].arrival_time)
-					{
-						
-						pos = i;
-						break;
-					}
+				//Process complete
+				tot--;
+				local_tim = -1; //Reset
+				pos = -1;
 			}
 		}
+		else
+			local_tim = -1; //Reset
 
-		if(pos == -1)
-		{
-			local_tim = -1;
-			continue;
-		}
-
-		prev = pos;
-
-		burst[pos]--;
-		for(int i=0; i<n; i++)
-			if(i!=pos && burst[i] && tim>=p[i].arrival_time)
-				p[i].waiting_time++;
-
-		if(burst[pos] == 0)
-		{
-			tot--;
-			local_tim = -1;
-			p[pos].turn_around_time = tim - p[pos].arrival_time +1;
-
-			av_turn += p[pos].turn_around_time;
-			av_wait += p[pos].waiting_time;
-		}
+		tim++;
+		local_tim = (local_tim +1)%time_quantum;
+		add_processes(tim);
 	}
+
+	printf("\n");
 }
 
 int main()
 {
+	double av_wait = 0.0, av_turn = 0.0;
 	system("clear");
+
 	printf("Enter the number of processes and the time quantum : ");
 	scanf("%d%d", &n, &time_quantum);
 
-	printf("Enter the arrival time of the processes.\n");
-	for(int i=0; i<n; i++)
-		scanf("%d", &p[i].arrival_time);
-
-	printf("Enter the burst time of the processes.\n");
+	printf("Enter the arrival and burst time of the processes.\n");
 	for(int i=0; i<n; i++)
 	{
+		scanf("%d", &p[i].arrival_time);
 		scanf("%d", &p[i].burst_time);
 		p[i].pid = i+1;
-		burst[i] = p[i].burst_time;
+		p[i].remaining_time = p[i].burst_time;
 	}
 
-	sort();
 	compute();
 
-	printf("\n");
+	printf("\n====================================================================================\n");
 	printf("Process\t\tArrival Time\tBurst Time\tWaiting time\tTurn around time\n");
 	for(int i=0; i<n; i++)
 	{
 		printf("%d\t\t%d\t\t", p[i].pid, p[i].arrival_time);
 		printf("%d\t\t%d\t\t%d\n", p[i].burst_time, p[i].waiting_time, p[i].turn_around_time);
+
+		av_turn += p[i].turn_around_time;
+		av_wait += p[i].waiting_time;
 	}
 
 	av_turn /= 1.0*n;
 	av_wait /= 1.0*n;
 
+	printf("\n====================================================================================\n");
 	printf("\nAverage waiting time     : %0.3lf", av_wait);
-	printf("\nAverage turn around time : %0.3lf", av_turn);
-	printf("\n\n");
+	printf("\nAverage turn around time : %0.3lf\n\n", av_turn);
+	
 }
 
 /*
 
---------------------------- Test Case 1 -----------------------------------
+Test Case 1:
 3 2
-0 1 4
-8 3 1
+0 1
+2 3
+4 5
 
------------------------------- Output -------------------------------------
-Process		Arrival Time	Burst Time	Waiting time	Turn around time
-1			0				8			4				12
-2			1				3			4				7
-3			4				1			0				1
-
-Average waiting time     : 2.667
-Average turn around time : 6.667
----------------------------------------------------------------------------
-
-4 2
-3 2 0 4
-8 3 2 6
+Output:
 
 */
