@@ -69,7 +69,7 @@ void compute()
 			pos = pop();
 		}
 
-		printf("%d ", pos==-1? -1:pos+1);
+		printf("%d ", pos==-1? -1:pos+1); //Print process under execution (every second)
 
 		//Update info for other processes
 		for(int i=0; i<n; i++)
@@ -90,7 +90,7 @@ void compute()
 			//Update info for current process
 			p[pos].remaining_time--;
 			p[pos].turn_around_time++;
-			//printf("# %d\n", p[pos].remaining_time);
+			
 			if(p[pos].remaining_time == 0)
 			{
 				//Process complete
