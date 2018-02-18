@@ -57,6 +57,8 @@ void *produce(void *iterations)
 		//NON CS
 		gotoxy(i+3, 0);
 		printf("Produced item : %d", item);
+		gotoxy(5, 60);
+		printf("Items in buffer : %2d\n", cnt);
 		fflush(stdout);
 	}
 }
@@ -84,6 +86,8 @@ void *consume(void *iterations)
 		//NON CS
 		gotoxy(i+3, 30);
 		printf("Consumed item : %d", item);
+		gotoxy(5, 60);
+		printf("Items in buffer : %2d\n", cnt);
 		fflush(stdout);
 	}
 }
@@ -94,8 +98,8 @@ int main()
 	srand(time(0));
 
 	pthread_t producer, consumer;
-	int iterations_consume = rand()%7 +3; //(3, 9)
-	int iterations_produce = rand()%7 +iterations_consume;
+	int iterations_consume = rand()%10 +6; //(3, 9)
+	int iterations_produce = rand()%10 +iterations_consume;
 
 	printf("Enter size of Buffer : ");
 	scanf("%d", &n);

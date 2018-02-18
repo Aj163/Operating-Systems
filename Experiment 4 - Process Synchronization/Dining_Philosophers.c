@@ -8,7 +8,7 @@
 #define MAX_SEC 3000000 //3 seconds
 #define gotoxy(x, y) printf("%c[%d;%df", 0x1B, x, y)
 
-sem_t stick[N];
+sem_t stick[N], mutex;
 int n;
 
 void *eat(void *arg)
@@ -19,15 +19,25 @@ void *eat(void *arg)
 	for(int i=0; i<iterations; i++)
 	{
 		int tim = rand()%MAX_SEC;
-		usleep(tim);
+		//usleep(tim);
 
-		sem_wait(stick+id);
-		sem_wait(stick+(id+1)%n);
+		if(id%2 == 0)
+		{
+			sem_wait(stick+id);
+			sem_wait(stick+(id+1)%n);
+		}
+		else
+		{
+			sem_wait(stick+(id+1)%n);
+			sem_wait(stick+id);
+		}	
 
 		//CS
+		sem_wait(&mutex);
 		gotoxy(4+id, 20);
 		printf("Eating  ");
 		fflush(stdout);
+		sem_post(&mutex);
 		tim = rand()%MAX_SEC;
 		usleep(tim);
 		gotoxy(4+id, 20);
@@ -60,6 +70,7 @@ int main()
 		printf("Thinking\n");
 	}
 
+	sem_init(&mutex, 0, 1);
 	for(int i=0; i<N; i++)
 		id[i] = i;
 	for(int i=0; i<n; i++)
