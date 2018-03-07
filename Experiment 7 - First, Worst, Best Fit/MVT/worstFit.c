@@ -46,11 +46,15 @@ void insert(int pos, int pid)
 
 int get_slot(int pid)
 {
+	int pos=-1, maxi = -1e9;
 	for(int i=0; i<tot; i++)
-		if(s[i].pid == -1 && s[i].size >= p[pid].size)
-			return i;
+		if(s[i].pid == -1 && s[i].size >= p[pid].size && maxi < s[i].size)
+		{
+			pos = i;
+			maxi = s[i].size;
+		}
 
-	return -1;
+	return pos;
 }
 
 int free_slot(int pos)
@@ -172,6 +176,6 @@ Size	|	Process
 70	|	None
 562	|	5
 118	|	None
-================================= 
+=================================
 
 */
